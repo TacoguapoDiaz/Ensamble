@@ -1,0 +1,181 @@
+int valorA = 0;    // Primer número (0 o 1)
+int valorB = 0;    // Segundo número (0 o 1)
+int operacion = 0; // Operación a realizar
+
+// Pines de los segmentos
+const int segmentA = 1;
+const int segmentB = 2;
+const int segmentC = 3;
+const int segmentD = 4;
+const int segmentE = 5;
+const int segmentF = 6;
+const int segmentG = 7;
+const int segmentMinus = 8;  // Símbolo "-"
+const int segmentError = 9;  // Símbolo "Error/Infinito"
+
+void setup() {
+  Serial.begin(9600);
+
+  // Configura todos los pines como salida
+  pinMode(segmentA, OUTPUT);
+  pinMode(segmentB, OUTPUT);
+  pinMode(segmentC, OUTPUT);
+  pinMode(segmentD, OUTPUT);
+  pinMode(segmentE, OUTPUT);
+  pinMode(segmentF, OUTPUT);
+  pinMode(segmentG, OUTPUT);
+  pinMode(segmentMinus, OUTPUT);
+  pinMode(segmentError, OUTPUT);
+
+  // Apaga todos los segmentos explícitamente
+  apagarDisplay();
+
+  Serial.println("Ingrese valores binarios (0 o 1) y elija una operación:");
+  Serial.println("Operaciones disponibles:");
+  Serial.println("1 = AND");
+  Serial.println("2 = OR");
+  Serial.println("3 = XOR");
+  Serial.println("4 = NOT A");
+  Serial.println("5 = NAND");
+  Serial.println("6 = NOR");
+  Serial.println("7 = XNOR");
+  Serial.println("8 = SUMA");
+  Serial.println("9 = RESTA");
+  Serial.println("10 = MULTIPLICACIÓN");
+  Serial.println("11 = DIVISIÓN");
+}
+
+void loop() {
+  if (Serial.available() > 0) {
+    Serial.println("Ingrese el número de la operación:");
+    while (Serial.available() == 0);
+    operacion = Serial.parseInt();
+    Serial.print("Operación seleccionada: ");
+    Serial.println(operacion);
+
+    // Valida la operación
+    if (operacion < 1 || operacion > 11) {
+      Serial.println("Operación no válida. Intente nuevamente.");
+      return;
+    }
+
+    if (operacion == 4) { // NOT es una operación unaria
+      Serial.println("Ingrese el valor A (0 o 1):");
+      while (Serial.available() == 0);
+      valorA = Serial.parseInt();
+      Serial.print("Valor A ingresado: ");
+      Serial.println(valorA);
+      if (!esBinario(valorA)) {
+        Serial.println("Valor no válido. A debe ser 0 o 1.");
+        return;
+      }
+      realizarOperacion(operacion, valorA, 0);
+    } else { // Operaciones binarias
+      Serial.println("Ingrese el valor A (0 o 1):");
+      while (Serial.available() == 0);
+      valorA = Serial.parseInt();
+      Serial.print("Valor A ingresado: ");
+      Serial.println(valorA);
+      if (!esBinario(valorA)) {
+        Serial.println("Valor no válido. A debe ser 0 o 1.");
+        return;
+      }
+
+      Serial.println("Ingrese el valor B (0 o 1):");
+      while (Serial.available() == 0);
+      valorB = Serial.parseInt();
+      Serial.print("Valor B ingresado: ");
+      Serial.println(valorB);
+      if (!esBinario(valorB)) {
+        Serial.println("Valor no válido. B debe ser 0 o 1.");
+        return;
+      }
+
+      realizarOperacion(operacion, valorA, valorB);
+    }
+  }
+}
+
+bool esBinario(int valor) {
+  return valor == 0 || valor == 1;
+}
+
+void realizarOperacion(int operacion, int valorA, int valorB) {
+  apagarDisplay(); 
+  int resultado = 0;
+
+  switch (operacion) {
+    case 1: resultado = valorA & valorB; Serial.println("Operación: AND"); break;
+    case 2: resultado = valorA | valorB; Serial.println("Operación: OR"); break;
+    case 3: resultado = valorA ^ valorB; Serial.println("Operación: XOR"); break;
+    case 4: resultado = !valorA; Serial.println("Operación: NOT A"); break;
+    case 5: resultado = !(valorA & valorB); Serial.println("Operación: NAND"); break;
+    case 6: resultado = !(valorA | valorB); Serial.println("Operación: NOR"); break;
+    case 7: resultado = !(valorA ^ valorB); Serial.println("Operación: XNOR"); break;
+    case 8: resultado = valorA + valorB; Serial.println("Operación: SUMA"); break;
+    case 9: resultado = valorA - valorB; Serial.println("Operación: RESTA"); break;
+    case 10: resultado = valorA * valorB; Serial.println("Operación: MULTIPLICACIÓN"); break;
+    case 11:
+      if (valorB == 0) {
+        Serial.println("División por cero: Infinito");
+        mostrarInfinito();
+        return;
+      }
+      resultado = valorA / valorB;
+      Serial.println("Operación: DIVISIÓN");
+      break;
+    default:
+      Serial.println("Operación no válida.");
+      return;
+  }
+
+  Serial.print("Resultado: ");
+  Serial.println(resultado);
+  mostrarNumero(resultado); // Actualiza el display con el resultado
+}
+
+void mostrarNumero(int numero) {
+  apagarDisplay(); // Apaga todos los segmentos antes de mostrar algo nuevo
+
+  switch (numero) {
+    case 0: // Muestra el número 0
+      digitalWrite(segmentA, HIGH);
+      digitalWrite(segmentB, HIGH);
+      digitalWrite(segmentC, HIGH);
+      digitalWrite(segmentD, HIGH);
+      digitalWrite(segmentE, HIGH);
+      digitalWrite(segmentF, HIGH);
+      digitalWrite(segmentG, LOW);
+      break;
+    case 1: // Muestra el número 1
+       digitalWrite(segmentA, HIGH);
+      digitalWrite(segmentB, LOW);
+      digitalWrite(segmentC, LOW);
+      digitalWrite(segmentD, HIGH);
+      digitalWrite(segmentE, HIGH);
+      digitalWrite(segmentF, HIGH);
+      digitalWrite(segmentG, HIGH);
+      break;
+    default: // Muestra un error si no es 0 ni 1
+      mostrarInfinito();
+      break;
+  }
+}
+
+void mostrarInfinito() {
+  apagarDisplay();
+  digitalWrite(segmentError, HIGH); // Activa el símbolo de infinito
+}
+
+void apagarDisplay() {
+  // Apaga todos los segmentos explícitamente
+digitalWrite(segmentA, LOW);
+  digitalWrite(segmentB, LOW);
+  digitalWrite(segmentC, LOW);
+  digitalWrite(segmentD, LOW);
+  digitalWrite(segmentE, LOW);
+  digitalWrite(segmentF, LOW);
+  digitalWrite(segmentG, LOW);
+  digitalWrite(segmentMinus, LOW);
+  digitalWrite(segmentError, LOW);
+}
